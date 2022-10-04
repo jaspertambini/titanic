@@ -1,3 +1,3 @@
 # titanic
 
-All test data for classification on titanic dataset
+All test code for classification on titanic dataset
