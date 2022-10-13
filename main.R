@@ -48,6 +48,37 @@ tryCatch(
 
 classifier <- function(model_type) {
   titanic_raw <- read.csv("C:\\Users\\jastam\\Downloads\\titanic\\train.csv")
+  titanic_raw[titanic_raw == ""] <- NA
+  titanic_raw$Embarked <- as.numeric(as.factor(titanic_raw$Embarked))
+
+
+  upper_whisker <- boxplot.stats(titanic_raw$Age)$stats[5]
+  outlier.filter <- titanic_raw$Age < upper_whisker
+  titanic_raw[outlier.filter,]
+  age.equation = "Age ~ Pclass + Sex + Fare + SibSp + Parch + Embarked"
+  age.model <- lm(
+    formula = age.equation,
+    data = titanic_raw[outlier.filter,]
+  )
+  age.row <- titanic_raw[
+    is.na(titanic_raw$Age),
+    c("Pclass", "Sex", "Fare", "SibSp", "Parch", "Embarked")]
+  Age.predictions <- predict(age.model, newdata = age.row)
+  titanic_raw[is.na(titanic_raw$Age), "Age"] <- Age.predictions
+
+  upper_whisker <- boxplot.stats(titanic_raw$Embarked)$stats[5]
+  outlier.filter <- titanic_raw$Embarked < upper_whisker
+  titanic_raw[outlier.filter,]
+  Embarked.equation = "Embarked ~ Pclass + Sex + Fare + SibSp + Parch + Age"
+  Embarked.model <- lm(
+    formula = Embarked.equation,
+    data = titanic_raw[outlier.filter,]
+  )
+  Embarked.row <- titanic_raw[
+    is.na(titanic_raw$Embarked),
+    c("Pclass", "Sex", "Fare", "SibSp", "Parch", "Age")]
+  Embarked.predictions <- predict(Embarked.model, newdata = Embarked.row)
+  titanic_raw[is.na(titanic_raw$Embarked), "Embarked"] <- Embarked.predictions
 
   titanic_raw$Title <- gsub('(.*, )|(\\..*)', '', titanic_raw$Name)
 
@@ -57,8 +88,6 @@ classifier <- function(model_type) {
   titanic_raw$Title[titanic_raw$Title == 'Ms'] <- 'Miss'
   titanic_raw$Title[titanic_raw$Title == 'Mme'] <- 'Mrs'
   titanic_raw$Title[titanic_raw$Title %in% rare_title] <- 'Rare Title'
-
-  #table(titanic_raw$Sex, titanic_raw$Title)
 
   titanic_raw$Surname <- sapply(titanic_raw$Name,
                                 function(x) strsplit(x, split = '[,.]')[[1]])
@@ -77,40 +106,38 @@ classifier <- function(model_type) {
   titanic_raw$FsizeD <- factor(titanic_raw$FsizeD)
   titanic_raw$Title <- factor(titanic_raw$Title)
 
-  str(titanic_raw)
-  class(titanic_raw$Embarked)
-
   factor_vars <- c('Pclass', 'Sex', 'Embarked',
                    'Title', 'FsizeD')
   titanic_raw[factor_vars] <- lapply(titanic_raw[factor_vars], function(x) as.vector(x))
 
   set.seed(123)
   titanic_raw[titanic_raw == ""] <- NA
-  mice_mod <- mice(titanic_raw[, !names(titanic_raw) %in% c('PassengerId', 'Name', 'Ticket', 'Cabin', 'Family', 'Surname', 'Survived')], method = 'rf')
-  mice_output <- complete(mice_mod)
-  titanic_raw$Age <- mice_output$Age
   titanic_raw$Child[titanic_raw$Age < 18] <- 'Child'
   titanic_raw$Child[titanic_raw$Age >= 18] <- 'Adult'
-  titanic_raw$Mother[titanic_raw$Sex == 'female' &
-                       titanic_raw$Parch > 0 &
-                       titanic_raw$Age > 18 &
-                       titanic_raw$Title != 'Miss'] <- 'Mother'
+  titanic_raw$Family_member[titanic_raw$Sex == 'female' &
+                              titanic_raw$Parch > 0 &
+                              titanic_raw$Age > 18 &
+                              titanic_raw$Title != 'Miss'] <- 'Mother'
   titanic_raw$Child <- as.factor(titanic_raw$Child)
-  titanic_raw$Mother <- as.factor(titanic_raw$Mother)
+  titanic_raw$Family_member <- as.factor(titanic_raw$Family_member)
 
   # Encoding target feature as factor
   titanic_raw$Survived <- factor(titanic_raw$Survived, levels = c(0, 1))
 
   set.seed(123)
-  split <- sample.split(titanic_raw$Survived, SplitRatio = 1)
+  split <- sample.split(titanic_raw$Survived, SplitRatio = 0.9)
   training_set <- subset(titanic_raw, split == TRUE)
   test_set <- subset(titanic_raw, split == FALSE)
 
-  training_set <- training_set[, c(2,3,5:8,10,12,13,16,18)]
-  test_set <- test_set[, c(2,3,5:8,10,12,13,16,18)]
+  training_set <- training_set[, c(2, 3, 5:8, 10, 12, 13, 16, 18)]
+  test_set <- test_set[, c(2, 3, 5:8, 10, 12, 13, 16, 18)]
+  training_set_ml <- titanic_raw[, c(2, 3, 5:8, 10, 12, 13, 16, 18)]
 
-  training_set[,c(2,4:7)] <- scale(training_set[, c(2,4:7)])
-  test_set[, c(2,4:7)] <- scale(test_set[, c(2,4:7)])
+
+  training_set[, c(2, 4:7)] <- scale(training_set[, c(2, 4:7)])
+  training_set_ml[, c(2, 4:7)] <- scale(training_set_ml[, c(2, 4:7)])
+
+  test_set[, c(2, 4:7)] <- scale(test_set[, c(2, 4:7)])
 
   training_set$Sex <- as.numeric(as.factor(training_set$Sex))
   training_set$Embarked <- as.numeric(as.factor(training_set$Embarked))
@@ -123,7 +150,7 @@ classifier <- function(model_type) {
   test_set$Title <- factor(test_set$Title)
   test_set$FsizeD <- factor(test_set$FsizeD)
 
-  training_set<- na.omit(training_set)
+  training_set <- na.omit(training_set)
 
 
   # Fitting Logistic Model
@@ -194,7 +221,7 @@ classifier <- function(model_type) {
       classifier <- svm(formula = Survived ~ .,
                         data = training_fold,
                         type = 'C-classification',
-                        kernel = 'radial')
+                        kernel = 'radial', sigma = 0.2656, C = 0.5)
       y_pred <- predict(classifier, newdata = test_fold[-1])
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
@@ -242,7 +269,7 @@ classifier <- function(model_type) {
       accuracy <- (cm[1, 1] + cm[2, 2]) / (cm[1, 1] + cm[2, 2] + cm[1, 2] + cm[2, 1])
       return(accuracy)
     })
-    return(mean(as.numeric(cv)))
+    return((as.numeric(cv)))
   }
     # Fitting Random Forest
   else if (model_type == "randomforest") {
@@ -262,7 +289,7 @@ classifier <- function(model_type) {
       accuracy <- (cm[1, 1] + cm[2, 2]) / (cm[1, 1] + cm[2, 2] + cm[1, 2] + cm[2, 1])
       return(accuracy)
     })
-    return(mean(as.numeric(cv)))
+    return((as.numeric(cv)))
   }
     # Fitting XGBoost
   else if (model_type == "xgboost") {
@@ -323,14 +350,17 @@ classifier("decisiontree")
 classifier("randomforest")
 classifier("xgboost")
 
-
 hyp_pam_classifier <- train(form = Survived ~ .,
-                            data = training_set, method = 'ranger'
-, na.action = na.omit)
+                            data = training_set_ml, method = 'xgbLinear'
+  , na.action = na.omit)
 hyp_pam_classifier
 hyp_pam_classifier$bestTune
 
 
 # xgbLinear
 # svmRadial
-
+# ada
+# blackboost
+# deepboost
+# xgbTree
+# fda
