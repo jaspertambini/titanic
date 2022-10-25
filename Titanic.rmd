@@ -1,0 +1,34 @@
+---
+title: "Experimentation with Titanic dataset to understand data science principles"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+author:
+  - name: "Jasper Tambini"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(caTools)
+library(class)
+library(e1071)
+library(rpart)
+library(randomForest)
+library(caret)
+library(ElemStatLearn)
+library(log4r)
+library(jsonlite)
+library(MASS)
+library(xgboost)
+library(mice)
+library(ingredients)
+
+titanic_results <- read.csv("C:\\git\\github_test\\titanic\\data_out\\titanic_.csv")
+titanic_results<- titanic_results[,-1]
+titanic_results
+
+
+```
