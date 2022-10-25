@@ -161,8 +161,16 @@ test_set$Title <- as.numeric(as.factor(test_set$Title))
 test_set$FsizeD <- as.numeric(as.factor(test_set$FsizeD))
 test_set$Child <- as.numeric(as.factor(test_set$Child))
 
-
 training_set <- na.omit(training_set)
+
+r<- cor(training_set[,-1], use="complete.obs")
+round(r,2)
+
+ggcorrplot(r,
+           hc.order = TRUE,
+           type = "lower",
+           lab = TRUE)
+chart.Correlation(training_set[,-1], histogram=TRUE, pch=19)
 
 classifier <- function(model_type) {
   # Fitting Logistic Model
