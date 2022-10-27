@@ -14,6 +14,8 @@ log <- init_log(logging_dir, today, time)
 
 load_libraries()
 
+plots <- list(width = 700, height = 500)
+
 source_functions(list.files(path = ".",
                             pattern = "_functions.R",
                             all.files = TRUE,
@@ -52,8 +54,40 @@ titanic_raw$Embarked <- as.numeric(as.factor(titanic_raw$Embarked))
 head(titanic_raw)
 min(titanic_raw$Age)
 upper_whisker <- boxplot.stats(titanic_raw$Age)$stats[5]
-boxplot(titanic_raw$Age, main = "Age Data",
-        xlab = "", ylab = "Age")
+box<- ggplot(titanic_raw, aes(x="", y=Age))+ geom_boxplot() +
+  labs(x="", y = "Age") + ggtitle("Age distribution") +
+  theme(plot.tag.position = c(0.107, 0.95),
+          legend.title = element_text(size = 24),
+          legend.text = element_text(size = 20),
+          legend.position = "top",
+          plot.tag = element_text(size = 22, colour = "black"),
+          axis.text.x = element_text(color = "black", size = 20, angle = 0, hjust = .7, vjust = .9, face = "plain"),
+          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          plot.title = element_text(colour = 'black', size = 24),
+          plot.subtitle = element_text(colour = 'black', size = 20))
+
+hist<- ggplot(titanic_raw, aes(x=Age))+
+   ggtitle("Age distribution") + geom_histogram(aes(y=..density..), colour="black", fill="white", bins = 15)+
+ geom_density(alpha=.5, fill="#FF6666") + labs(x="Age", y="Density") +
+  theme(plot.tag.position = c(0.107, 0.95),
+          legend.title = element_text(size = 24),
+          legend.text = element_text(size = 20),
+          legend.position = "top",
+          plot.tag = element_text(size = 22, colour = "black"),
+          axis.text.x = element_text(color = "black", size = 20, angle = 0, hjust = .7, vjust = .9, face = "plain"),
+          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          plot.title = element_blank(),
+          plot.subtitle = element_text(colour = 'black', size = 20))
+
+png("age_box_hist.png", width = plots$width, height = plots$height)
+grid.arrange(box, hist, ncol=2)
+dev <- dev.off()
+
+
 outlier.filter <- titanic_raw$Age < upper_whisker
 titanic_raw[outlier.filter,]
 age.equation <- "Age ~ Pclass + Sex + Fare + SibSp + Parch + Embarked"
@@ -61,9 +95,9 @@ age.model <- lm(
   formula = age.equation,
   data = titanic_raw[outlier.filter,]
 )
-plot(Age ~ Pclass, data = titanic_raw[outlier.filter,]
-)
+png("age_correlations.png", width = plots$width, height = plots$height)
 avPlots(age.model)
+dev <- dev.off()
 
 age.row <- titanic_raw[
   is.na(titanic_raw$Age),
@@ -85,7 +119,20 @@ titanic_raw[is.na(titanic_raw$Embarked), "Embarked"] <- Embarked.predictions
 titanic_raw$Title <- gsub('(.*, )|(\\..*)', '', titanic_raw$Name)
 counts <- titanic_raw %>% count(Title)
 counts <- rename(counts, count = n)
-ggplot(counts, aes(x = reorder(Title, -count), y = count)) + geom_bar(stat = 'identity')
+
+before<- ggplot(counts, aes(x = reorder(Title, -count), y = count)) + geom_bar(stat = 'identity') +
+   ggtitle("Titles of passengers") + labs(x="Title", y="") + geom_text(aes(label=count), vjust=1, color="white", size=8) +
+  theme(plot.tag.position = c(0.107, 0.95),
+          legend.title = element_text(size = 24),
+          legend.text = element_text(size = 20),
+          legend.position = "top",
+          plot.tag = element_text(size = 22, colour = "black"),
+          axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          plot.title = element_blank(),
+          plot.subtitle = element_text(colour = 'black', size = 20))
 
 rare_title <- c('Dona', 'Lady', 'the Countess', 'Capt', 'Col', 'Don',
                 'Dr', 'Major', 'Rev', 'Sir', 'Jonkheer')
@@ -96,7 +143,25 @@ titanic_raw$Title[titanic_raw$Title %in% rare_title] <- 'Rare Title'
 
 counts <- titanic_raw %>% count(Title)
 counts <- rename(counts, count = n)
-ggplot(counts, aes(x = reorder(Title, -count), y = count)) + geom_bar(stat = 'identity')
+
+after<- ggplot(counts, aes(x = reorder(Title, -count), y = count)) + geom_bar(stat = 'identity') +
+   ggtitle("Titles of passengers") + labs(x="Title", y="") + geom_text(aes(label=count), vjust=1, color="white", size=8) +
+  theme(plot.tag.position = c(0.107, 0.95),
+          legend.title = element_text(size = 24),
+          legend.text = element_text(size = 20),
+          legend.position = "top",
+          plot.tag = element_text(size = 22, colour = "black"),
+          axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+          plot.title = element_blank(),
+          plot.subtitle = element_text(colour = 'black', size = 20))
+
+
+png("title_split.png", width = plots$width, height = plots$height)
+grid.arrange(before, after, nrow=2)
+dev <- dev.off()
 
 
 titanic_raw$Surname <- sapply(titanic_raw$Name,
@@ -165,12 +230,15 @@ training_set <- na.omit(training_set)
 
 r<- cor(training_set[,-1], use="complete.obs")
 round(r,2)
-
+png("corrplot.png", width = plots$width, height = plots$height)
 ggcorrplot(r,
            hc.order = TRUE,
            type = "lower",
            lab = TRUE)
+dev <- dev.off()
+png("detailed_corrplot.png", width = plots$width, height = plots$height)
 chart.Correlation(training_set[,-1], histogram=TRUE, pch=19)
+dev <- dev.off()
 
 classifier <- function(model_type) {
   # Fitting Logistic Model
@@ -265,12 +333,12 @@ classifier <- function(model_type) {
   cm_test <- table(data = y_pred, reference = test_set$Survived)
   accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
   precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-  sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-  fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+  recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+  fscore <- (2 * (recall * precision)) / (recall + precision)
   specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-  summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                        value = c(accuracy, precision, sensitivity, fscore, specificity))
+  summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                        value = c(accuracy, precision, recall, fscore, specificity))
   listOfDataframe <- list(summary, feature_importance)
   return(listOfDataframe)
 }
@@ -293,12 +361,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -317,12 +385,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -344,12 +412,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -371,12 +439,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -396,12 +464,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -421,12 +489,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -447,12 +515,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -473,12 +541,12 @@ k_fold_cv <- function(model_type) {
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
       accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
       precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      sensitivity <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (sensitivity * precision)) / (sensitivity + precision)
+      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore <- (2 * (recall * precision)) / (recall + precision)
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "sensitivity", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, sensitivity, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
+                            val_value = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -589,6 +657,18 @@ summary_all <- summary %>%
   full_join(summary_cv, by = c("metric", "type")) %>%
   dplyr::select(metric, type, value, val_value)
 
+png("algorithm_comparison_cv.png", width = plots$width, height = plots$height)
+ggplot(data=summary_all, aes(x=type, y=val_value, fill=metric)) +
+geom_bar(stat="identity", color="black", position=position_dodge())+
+  theme_minimal()
+dev <- dev.off()
+
+png("algorithm_comparison.png", width = plots$width, height = plots$height)
+ggplot(data=summary_all, aes(x=type, y=value, fill=metric)) +
+geom_bar(stat="identity", color="black", position=position_dodge())+
+  theme_minimal()
+dev <- dev.off()
+
 feature_importance_tree <- classifier("decisiontree")[2] %>% as.data.frame()
 feature_plot_tree <- ggplot2::ggplot(feature_importance_tree) +
   geom_col(aes(x = variable, y = imp),
@@ -606,16 +686,16 @@ feature_plot_forest <- ggplot2::ggplot(feature_importance_forest) +
   coord_flip() +
   scale_fill_grey() +
   theme_bw()
-
+png("feature_tree_forest.png", width = plots$width, height = plots$height)
 grid.arrange(feature_plot_tree, feature_plot_forest, ncol=2)
-    feature_importance <- varImpPlot(classifier)
+dev <- dev.off()
 
-
-hyp_pam_classifier <- train(form = Survived ~ .,
-                            data = training_set, method = 'svmRadial'
-  , na.action = na.omit)
-hyp_pam_classifier
-hyp_pam_classifier$bestTune
+#
+# hyp_pam_classifier <- train(form = Survived ~ .,
+#                             data = training_set, method = 'svmRadial'
+#   , na.action = na.omit)
+# hyp_pam_classifier
+# hyp_pam_classifier$bestTune
 #
 #
 # # xgbLinear
@@ -625,24 +705,27 @@ hyp_pam_classifier$bestTune
 # # deepboost
 # # xgbTree
 # # fda
+#
+#
+# tryCatch(
+#   expr = {
+#
+#     test_data_file <- paste0("titanic_", ".csv")
+#     test_data_file_path <- paste0(data_out_dir, test_data_file)
+#
+#     write.csv(summary_all, test_data_file_path, row.names = TRUE)
+#
+#     msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
+#     level(log) <- 'DEBUG'
+#     debug(log, msg)
+#   },
+#   error = function(e) {
+#     msg <- paste0("Failed to create Titanic table", " with ", e)
+#     level(log) <- 'ERROR'
+#     error(log, msg)
+#   }
+# )
 
 
-tryCatch(
-  expr = {
 
-    test_data_file <- paste0("titanic_", ".csv")
-    test_data_file_path <- paste0(data_out_dir, test_data_file)
-
-    write.csv(summary_all, test_data_file_path, row.names = TRUE)
-
-    msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
-    level(log) <- 'DEBUG'
-    debug(log, msg)
-  },
-  error = function(e) {
-    msg <- paste0("Failed to create Titanic table", " with ", e)
-    level(log) <- 'ERROR'
-    error(log, msg)
-  }
-)
 

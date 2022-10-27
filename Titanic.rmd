@@ -9,26 +9,58 @@ author:
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+## Missing "Age" values
+Age has a significant number of missing values, so before estimating these we take a look at the overall distribution. We see significant outliers towards the upper limits and so remove these when estimating the remaining ages. We also see a very right skewed distribution, so we take the log in order to normalise.
 
-library(tidyverse)
-library(caTools)
-library(class)
-library(e1071)
-library(rpart)
-library(randomForest)
-library(caret)
-library(ElemStatLearn)
-library(log4r)
-library(jsonlite)
-library(MASS)
-library(xgboost)
-library(mice)
-library(ingredients)
+![](../titanic/age_box_hist.png)
 
+
+
+## Age correlations
+We examine the correlations between Age and the other factors to see which have the largest influence. As expected "Class" it highly negatively correlated as older people are generally wealthier, so can afford to stay in a higher class. SibSp which shows the number of siblings/spouces also follows a similar trend which again is to be expected.
+
+![](../titanic/age_correlations.png)
+
+
+
+## Simplifying the "Title" feature
+There are a number of rare titles of passengers onboard the ship, to help simplify improve the reliability of this feature, we have grouped the less popular titles together.
+
+![](../titanic/title_split.png)
+
+
+
+## Identifying collinearity
+Collinearity between variables is most significant in Fare-Class and Child-Age which both are expected to be true. In our case Random Forests
+
+![](../titanic/corrplot.png)
+
+
+
+## Model performance
+Algorithm comparison shows overall Decision Trees perform the best for fscore and accuracy, although it can be noted that recall is slightly poorer than other options.
+
+![](../titanic/algorithm_comparison.png)
+
+
+
+## Cross-validation
+Usually Random Forests will perform better than a single Decision Tree as it works by combining multiple trees together, this is esspcially useful when trying to avoid overfitting. Therefore we run Cross-Validation in order to test for this, where the algorithm iterates multiple times over the dataset. We test this below and interestingly the result stays the same.
+
+![](../titanic/algorithm_comparison_cv.png)
+
+
+
+## Feature importance
+Another test which is useful to run is to see what the feature importances are of the algorithm, and whether or not this meets real world expectations. Below we compare the results for Decision Trees vs Random Forests
+
+![](../titanic/feature_tree_forest.png)
+
+```{r table1, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+require(pander)
 titanic_results <- read.csv("C:\\git\\github_test\\titanic\\data_out\\titanic_.csv")
 titanic_results<- titanic_results[,-1]
-titanic_results
-
-
+panderOptions('table.split.table', Inf)
+set.caption("Data on Titanic")
+pander(titanic_results, style = 'rmarkdown')
 ```
