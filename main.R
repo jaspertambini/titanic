@@ -54,37 +54,41 @@ titanic_raw$Embarked <- as.numeric(as.factor(titanic_raw$Embarked))
 head(titanic_raw)
 min(titanic_raw$Age)
 upper_whisker <- boxplot.stats(titanic_raw$Age)$stats[5]
-box<- ggplot(titanic_raw, aes(x="", y=Age))+ geom_boxplot() +
-  labs(x="", y = "Age") + ggtitle("Age distribution") +
+box <- ggplot(titanic_raw, aes(x = "", y = Age)) +
+  geom_boxplot() +
+  labs(x = "", y = "Age") +
+  ggtitle("Age distribution") +
   theme(plot.tag.position = c(0.107, 0.95),
-          legend.title = element_text(size = 24),
-          legend.text = element_text(size = 20),
-          legend.position = "top",
-          plot.tag = element_text(size = 22, colour = "black"),
-          axis.text.x = element_text(color = "black", size = 20, angle = 0, hjust = .7, vjust = .9, face = "plain"),
-          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          plot.title = element_text(colour = 'black', size = 24),
-          plot.subtitle = element_text(colour = 'black', size = 20))
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "top",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 0, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_text(colour = 'black', size = 24),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 
-hist<- ggplot(titanic_raw, aes(x=Age))+
-   ggtitle("Age distribution") + geom_histogram(aes(y=..density..), colour="black", fill="white", bins = 15)+
- geom_density(alpha=.5, fill="#FF6666") + labs(x="Age", y="Density") +
+hist <- ggplot(titanic_raw, aes(x = Age)) +
+  ggtitle("Age distribution") +
+  geom_histogram(aes(y = ..density..), colour = "black", fill = "white", bins = 15) +
+  geom_density(alpha = .5, fill = "SeaGreen3") +
+  labs(x = "Age", y = "Density") +
   theme(plot.tag.position = c(0.107, 0.95),
-          legend.title = element_text(size = 24),
-          legend.text = element_text(size = 20),
-          legend.position = "top",
-          plot.tag = element_text(size = 22, colour = "black"),
-          axis.text.x = element_text(color = "black", size = 20, angle = 0, hjust = .7, vjust = .9, face = "plain"),
-          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          plot.title = element_blank(),
-          plot.subtitle = element_text(colour = 'black', size = 20))
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "top",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 0, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 
 png("age_box_hist.png", width = plots$width, height = plots$height)
-grid.arrange(box, hist, ncol=2)
+grid.arrange(box, hist, ncol = 2)
 dev <- dev.off()
 
 
@@ -120,19 +124,23 @@ titanic_raw$Title <- gsub('(.*, )|(\\..*)', '', titanic_raw$Name)
 counts <- titanic_raw %>% count(Title)
 counts <- rename(counts, count = n)
 
-before<- ggplot(counts, aes(x = reorder(Title, -count), y = count)) + geom_bar(stat = 'identity') +
-   ggtitle("Titles of passengers") + labs(x="Title", y="") + geom_text(aes(label=count), vjust=1, color="white", size=8) +
+before <- ggplot(counts, aes(x = reorder(Title, -count), y = count)) +
+  geom_bar(stat = 'identity', color="black", fill = "SeaGreen3") +
+  ggtitle("Titles of passengers") +
+  labs(x = "", y = "") +
+  ylim(0, 600) +
+  geom_text(aes(label = count), vjust = -0.5, color = "black", size = 5) +
   theme(plot.tag.position = c(0.107, 0.95),
-          legend.title = element_text(size = 24),
-          legend.text = element_text(size = 20),
-          legend.position = "top",
-          plot.tag = element_text(size = 22, colour = "black"),
-          axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
-          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          plot.title = element_blank(),
-          plot.subtitle = element_text(colour = 'black', size = 20))
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "top",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 
 rare_title <- c('Dona', 'Lady', 'the Countess', 'Capt', 'Col', 'Don',
                 'Dr', 'Major', 'Rev', 'Sir', 'Jonkheer')
@@ -144,23 +152,26 @@ titanic_raw$Title[titanic_raw$Title %in% rare_title] <- 'Rare Title'
 counts <- titanic_raw %>% count(Title)
 counts <- rename(counts, count = n)
 
-after<- ggplot(counts, aes(x = reorder(Title, -count), y = count)) + geom_bar(stat = 'identity') +
-   ggtitle("Titles of passengers") + labs(x="Title", y="") + geom_text(aes(label=count), vjust=1, color="white", size=8) +
+after <- ggplot(counts, aes(x = reorder(Title, -count), y = count)) +
+  geom_bar(stat = 'identity', color="black", fill = "SeaGreen3") +
+  labs(x = "", y = "") +
+  ylim(0, 600) +
+  geom_text(aes(label = count), vjust = -0.5, color = "black", size = 7) +
   theme(plot.tag.position = c(0.107, 0.95),
-          legend.title = element_text(size = 24),
-          legend.text = element_text(size = 20),
-          legend.position = "top",
-          plot.tag = element_text(size = 22, colour = "black"),
-          axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
-          axis.text.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
-          plot.title = element_blank(),
-          plot.subtitle = element_text(colour = 'black', size = 20))
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "top",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 
 
 png("title_split.png", width = plots$width, height = plots$height)
-grid.arrange(before, after, nrow=2)
+grid.arrange(before, after, nrow = 2)
 dev <- dev.off()
 
 
@@ -228,16 +239,16 @@ test_set$Child <- as.numeric(as.factor(test_set$Child))
 
 training_set <- na.omit(training_set)
 
-r<- cor(training_set[,-1], use="complete.obs")
-round(r,2)
+r <- cor(training_set[, -1], use = "complete.obs")
+round(r, 2)
 png("corrplot.png", width = plots$width, height = plots$height)
 ggcorrplot(r,
            hc.order = TRUE,
            type = "lower",
-           lab = TRUE)
+lab = TRUE)
 dev <- dev.off()
 png("detailed_corrplot.png", width = plots$width, height = plots$height)
-chart.Correlation(training_set[,-1], histogram=TRUE, pch=19)
+chart.Correlation(training_set[, -1], histogram = TRUE, pch = 19)
 dev <- dev.off()
 
 classifier <- function(model_type) {
@@ -366,7 +377,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -390,7 +401,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -417,7 +428,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -444,7 +455,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -469,7 +480,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -494,7 +505,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -520,7 +531,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -530,9 +541,10 @@ k_fold_cv <- function(model_type) {
     cv <- lapply(folds, function(x) {
       training_fold <- training_set[-x,]
       test_fold <- training_set[x,]
-      classifier <- xgboost(data = as.matrix(training_fold[-1]),
-                            label = training_fold$Survived,
-                            nrounds = 10, verbose = 0)
+      param <- list(lambda = 0.1, eta = 0.3, verbose = 0, alpha=0.1)
+      classifier <- xgboost(param, data = as.matrix(training_fold[-1]),
+                          label = training_fold$Survived,
+                          nrounds = 50, verbose = 0)
       y_pred <- predict(classifier, newdata = as.matrix(test_fold[-1]), type = 'class')
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
@@ -546,7 +558,7 @@ k_fold_cv <- function(model_type) {
       specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
       summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            val_value = c(accuracy, precision, recall, fscore, specificity))
+                            validation = c(accuracy, precision, recall, fscore, specificity))
     })
     return((cv))
   }
@@ -579,7 +591,7 @@ xgboost <- classifier("xgboost")[1] %>%
   mutate(type = "xgboost")
 
 
-  summary <- logistic %>%
+summary <- logistic %>%
   bind_rows(knn, svm, kernelsvm, naivebayes, decisiontree, randomforest, xgboost)
 
 # classifier("logistic")
@@ -596,56 +608,56 @@ logistic_cv <- k_fold_cv("logistic") %>%
   dplyr::select(-.id) %>%
   mutate(type = "logistic") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 knn_cv <- k_fold_cv("knn") %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "knn") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 svm_cv <- k_fold_cv("svm") %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "svm") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 kernelsvm_cv <- k_fold_cv("kernelsvm") %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "kernelsvm") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 naivebayes_cv <- k_fold_cv("naivebayes") %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "naivebayes") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 decisiontree_cv <- k_fold_cv("decisiontree") %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "decisiontree") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 randomforest_cv <- k_fold_cv("randomforest") %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "randomforest") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 xgboost_cv <- k_fold_cv("xgboost") %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "xgboost") %>%
   dplyr::group_by(metric, type) %>%
-  summarise(val_value = mean(val_value)) %>%
+  summarise(validation = mean(validation)) %>%
   as.data.frame()
 
 
@@ -655,47 +667,93 @@ summary_cv <- logistic_cv %>%
 
 summary_all <- summary %>%
   full_join(summary_cv, by = c("metric", "type")) %>%
-  dplyr::select(metric, type, value, val_value)
+  dplyr::select(metric, type, value, validation)
 
 png("algorithm_comparison_cv.png", width = plots$width, height = plots$height)
-ggplot(data=summary_all, aes(x=type, y=val_value, fill=metric)) +
-geom_bar(stat="identity", color="black", position=position_dodge())+
-  theme_minimal()
+ggplot(data = summary_all, aes(x = type, y = validation, fill = metric)) +
+  geom_bar(stat = "identity", color = "black", position = position_dodge()) +
+    labs(x = "Algorithm", y = "Validation Value") +
+  theme(plot.tag.position = c(0.107, 0.95),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "right",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 dev <- dev.off()
 
 png("algorithm_comparison.png", width = plots$width, height = plots$height)
-ggplot(data=summary_all, aes(x=type, y=value, fill=metric)) +
-geom_bar(stat="identity", color="black", position=position_dodge())+
-  theme_minimal()
+ggplot(data = summary_all, aes(x = type, y = value, fill = metric)) +
+  geom_bar(stat = "identity", color = "black", position = position_dodge()) +
+    labs(x = "Algorithm", y = "Raw Value") +
+  theme(plot.tag.position = c(0.107, 0.95),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "right",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 dev <- dev.off()
 
 feature_importance_tree <- classifier("decisiontree")[2] %>% as.data.frame()
-feature_plot_tree <- ggplot2::ggplot(feature_importance_tree) +
-  geom_col(aes(x = variable, y = imp),
-           col = "black", show.legend = F) +
+feature_importance_tree$imp<- as.integer(feature_importance_tree$imp)
+feature_plot_tree <- ggplot2::ggplot(feature_importance_tree, aes(x = variable, y = imp)) +
+  geom_col(color="black", fill="SeaGreen3", show.legend = F) +
   coord_flip() +
-  scale_fill_grey() +
-  theme_bw()
+    labs(x = "", y = "Importance") +
+    scale_y_continuous(limits=c(0,150)) +
+  geom_text(aes(label = imp), hjust = -0.5, color = "black", size = 7) +
+  theme(plot.tag.position = c(0.107, 0.95),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "top",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 
 feature_importance_forest <- classifier("randomforest")[2] %>% as.data.frame()
-feature_importance_forest <-  feature_importance_forest %>%
-    rownames_to_column('variable')
-feature_plot_forest <- ggplot2::ggplot(feature_importance_forest) +
-  geom_col(aes(x = reorder(variable, MeanDecreaseGini), y = MeanDecreaseGini),
-           col = "black", show.legend = F) +
+feature_importance_forest <- feature_importance_forest %>%
+  rownames_to_column('variable')
+feature_importance_forest$MeanDecreaseGini<- as.integer(feature_importance_forest$MeanDecreaseGini)
+feature_plot_forest <- ggplot2::ggplot(feature_importance_forest, aes(x = reorder(variable, MeanDecreaseGini), y = MeanDecreaseGini)) +
+  geom_col(color="black", fill="SeaGreen3", show.legend = F) +
   coord_flip() +
-  scale_fill_grey() +
-  theme_bw()
+  scale_y_continuous(limits=c(0,150)) +
+   labs(x = "", y = "Importance") +
+  geom_text(aes(label = MeanDecreaseGini), hjust = -0.5, color = "black", size = 7) +
+  theme(plot.tag.position = c(0.107, 0.95),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "top",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
 png("feature_tree_forest.png", width = plots$width, height = plots$height)
-grid.arrange(feature_plot_tree, feature_plot_forest, ncol=2)
+grid.arrange(feature_plot_tree, feature_plot_forest, ncol = 2)
 dev <- dev.off()
 
 #
-# hyp_pam_classifier <- train(form = Survived ~ .,
-#                             data = training_set, method = 'svmRadial'
-#   , na.action = na.omit)
-# hyp_pam_classifier
-# hyp_pam_classifier$bestTune
+hyp_pam_classifier <- train(form = Survived ~ .,
+                            data = training_set, method = 'xgbLinear'
+  , na.action = na.omit)
+hyp_pam_classifier
+hyp_pam_classifier$bestTune
 #
 #
 # # xgbLinear
@@ -707,24 +765,31 @@ dev <- dev.off()
 # # fda
 #
 #
-# tryCatch(
-#   expr = {
-#
-#     test_data_file <- paste0("titanic_", ".csv")
-#     test_data_file_path <- paste0(data_out_dir, test_data_file)
-#
-#     write.csv(summary_all, test_data_file_path, row.names = TRUE)
-#
-#     msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
-#     level(log) <- 'DEBUG'
-#     debug(log, msg)
-#   },
-#   error = function(e) {
-#     msg <- paste0("Failed to create Titanic table", " with ", e)
-#     level(log) <- 'ERROR'
-#     error(log, msg)
-#   }
-# )
+
+summary_all<- summary_all %>% pivot_wider(names_from = metric, values_from = c(value, validation))
+
+summary_all[2:11] <- sapply(summary_all[2:11], function(x) percent(x, accuracy=1))
+
+
+
+tryCatch(
+  expr = {
+
+    test_data_file <- paste0("titanic_results", ".csv")
+    test_data_file_path <- paste0(data_out_dir, test_data_file)
+
+    write.csv(summary_all, test_data_file_path, row.names = TRUE)
+
+    msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
+    level(log) <- 'DEBUG'
+    debug(log, msg)
+  },
+  error = function(e) {
+    msg <- paste0("Failed to create Titanic table", " with ", e)
+    level(log) <- 'ERROR'
+    error(log, msg)
+  }
+)
 
 
 

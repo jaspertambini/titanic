@@ -17,9 +17,12 @@ Age has a significant number of missing values, so before estimating these we ta
 
 
 ## Age correlations
-We examine the correlations between Age and the other factors to see which have the largest influence. As expected "Class" it highly negatively correlated as older people are generally wealthier, so can afford to stay in a higher class. SibSp which shows the number of siblings/spouces also follows a similar trend which again is to be expected.
+We examine the correlations between Age and the other factors to see which have the largest influence. As expected "Class" it highly negatively correlated as older people are generally wealthier, so can afford to stay in a higher class. SibSp which shows the number of siblings/spouses also follows a similar trend which again is to be expected. Child and Title are correlated due to the nature of of the features, e.g. a child is always a younger age than an adult.
 
-![](../titanic/age_correlations.png)
+## Identifying other collinearities
+Collinearity between variables is most noticeable in Fare-Class and Child-Age which both are expected to be true. In our case we will continue to use these features as the correlation is not significantly high.
+
+![](../titanic/corrplot.png)
 
 
 
@@ -27,13 +30,6 @@ We examine the correlations between Age and the other factors to see which have 
 There are a number of rare titles of passengers onboard the ship, to help simplify improve the reliability of this feature, we have grouped the less popular titles together.
 
 ![](../titanic/title_split.png)
-
-
-
-## Identifying collinearity
-Collinearity between variables is most significant in Fare-Class and Child-Age which both are expected to be true. In our case Random Forests
-
-![](../titanic/corrplot.png)
 
 
 
@@ -57,10 +53,12 @@ Another test which is useful to run is to see what the feature importances are o
 ![](../titanic/feature_tree_forest.png)
 
 ```{r table1, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
-require(pander)
-titanic_results <- read.csv("C:\\git\\github_test\\titanic\\data_out\\titanic_.csv")
-titanic_results<- titanic_results[,-1]
-panderOptions('table.split.table', Inf)
-set.caption("Data on Titanic")
-pander(titanic_results, style = 'rmarkdown')
-```
+library(pander)
+library(scales)
+titanic_results <- read.csv("C:\\git\\github_test\\titanic\\data_out\\titanic_results.csv")
+titanic_results<- titanic_results[,-c(1,3:7)]
+
+library(formattable)
+formattable(titanic_results, align = c("l",rep("r", NCOL(titanic_results) - 1)),
+            list(area(col = 2:6) ~ function(x) percent(x, digits = 0),
+                 area(col = 2:6) ~ color_tile("transparent", "lightblue")))
