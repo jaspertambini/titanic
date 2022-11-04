@@ -36,6 +36,8 @@ There are a number of rare titles of passengers onboard the ship, to help simpli
 ## Model performance
 Algorithm comparison shows overall Decision Trees perform the best for fscore and accuracy, although it can be noted that recall is slightly poorer than other options.
 
+
+![](../titanic/summary_train_test.png)
 ![](../titanic/algorithm_comparison.png)
 
 
@@ -56,9 +58,21 @@ Another test which is useful to run is to see what the feature importances are o
 library(pander)
 library(scales)
 titanic_results <- read.csv("C:\\git\\github_test\\titanic\\data_out\\titanic_results.csv")
-titanic_results<- titanic_results[,-c(1,3:7)]
+tuning_results <- read.csv("C:\\git\\github_test\\titanic\\data_out\\tuning_results.csv")
+titanic_results_1<- titanic_results[,-c(1,3:7)]
 
 library(formattable)
-formattable(titanic_results, align = c("l",rep("r", NCOL(titanic_results) - 1)),
+formattable(titanic_results_1, align = c("l",rep("r", NCOL(titanic_results_1) - 1)),
             list(area(col = 2:6) ~ function(x) percent(x, digits = 0),
                  area(col = 2:6) ~ color_tile("transparent", "lightblue")))
+
+titanic_results_2<- titanic_results[,-c(1,3:5,7:10,12)]
+formattable(titanic_results_2, align = c("l",rep("r", NCOL(titanic_results_2) - 1)),
+            list(area(col = c(2,3)) ~ function(x) percent(x, digits = 0),
+                 area(col = c(2,3)) ~ color_tile("transparent", "lightblue")))
+
+tuning_results<- tuning_results[,-1]
+formattable(tuning_results, align = c("l",rep("r", NCOL(tuning_results) - 1)),
+            list(area(col = 2:6) ~ function(x) percent(x, digits = 0),
+                 area(col = 2:6) ~ color_tile("transparent", "lightblue")))
+

@@ -125,7 +125,7 @@ counts <- titanic_raw %>% count(Title)
 counts <- rename(counts, count = n)
 
 before <- ggplot(counts, aes(x = reorder(Title, -count), y = count)) +
-  geom_bar(stat = 'identity', color="black", fill = "SeaGreen3") +
+  geom_bar(stat = 'identity', color = "black", fill = "SeaGreen3") +
   ggtitle("Titles of passengers") +
   labs(x = "", y = "") +
   ylim(0, 600) +
@@ -153,7 +153,7 @@ counts <- titanic_raw %>% count(Title)
 counts <- rename(counts, count = n)
 
 after <- ggplot(counts, aes(x = reorder(Title, -count), y = count)) +
-  geom_bar(stat = 'identity', color="black", fill = "SeaGreen3") +
+  geom_bar(stat = 'identity', color = "black", fill = "SeaGreen3") +
   labs(x = "", y = "") +
   ylim(0, 600) +
   geom_text(aes(label = count), vjust = -0.5, color = "black", size = 7) +
@@ -245,7 +245,7 @@ png("corrplot.png", width = plots$width, height = plots$height)
 ggcorrplot(r,
            hc.order = TRUE,
            type = "lower",
-lab = TRUE)
+           lab = TRUE)
 dev <- dev.off()
 png("detailed_corrplot.png", width = plots$width, height = plots$height)
 chart.Correlation(training_set[, -1], histogram = TRUE, pch = 19)
@@ -262,14 +262,14 @@ classifier <- function(model_type) {
     y_pred <- ifelse(y_pred > 0.5, 1, 0)
     feature_importance <- data.frame()
   }
-    # Fitting K-NN
-  else if (model_type == "knn") {
-    y_pred <- knn(train = training_set[, -1], test = test_set[, -1],
-                  cl = training_set[, 1], 5)
-    y_pred <- as.numeric(as.character(y_pred))
-    y_pred <- ifelse(y_pred > 0.5, 1, 0)
-    feature_importance <- data.frame()
-  }
+    #   # Fitting K-NN
+    else if (model_type == "knn") {
+      y_pred <- knn(train = training_set[, -1], test = test_set[, -1],
+                    cl = training_set[, 1], 5)
+      y_pred <- as.numeric(as.character(y_pred))
+      y_pred <- ifelse(y_pred > 0.5, 1, 0)
+      feature_importance <- data.frame()
+    }
     # Fitting SVM
   else if (model_type == "svm") {
     classifier <- svm(formula = Survived ~ .,
@@ -286,7 +286,7 @@ classifier <- function(model_type) {
     classifier <- svm(formula = Survived ~ .,
                       data = training_set,
                       type = 'C-classification',
-                      kernel = 'radial', sigma = 0.2656, C = 0.5)
+                      kernel = 'radial', sigma = 0.1589, C = 0.25)
     y_pred <- predict(classifier, newdata = test_set[-1])
     y_pred <- as.numeric(as.character(y_pred))
     y_pred <- ifelse(y_pred > 0.5, 1, 0)
@@ -303,12 +303,12 @@ classifier <- function(model_type) {
   }
     # Fitting Decision Tree
   else if (model_type == "decisiontree") {
-    classifier <- rpart(formula = Survived ~ .,
-                        data = training_set)
-    y_pred <- predict(classifier, newdata = test_set[-1], type = 'class')
+    classifier <- train(Survived ~ ., method = "rpart", data = training_set,
+                             cp=0.0125)
+    y_pred <- predict(classifier, newdata = test_set)
     y_pred <- as.numeric(as.character(y_pred))
     y_pred <- ifelse(y_pred > 0.5, 1, 0)
-    df <- data.frame(imp = classifier$variable.importance)
+    df <- data.frame(imp = classifier$finalModel$variable.importance)
     feature_importance <- df %>%
       tibble::rownames_to_column() %>%
       dplyr::rename("variable" = rowname) %>%
@@ -317,13 +317,13 @@ classifier <- function(model_type) {
   }
     # Fitting Random Forest
   else if (model_type == "randomforest") {
-    classifier <- randomForest(x = training_set[-1],
-                               y = training_set$Survived,
-                               ntree = 10)
-    y_pred <- predict(classifier, newdata = test_set[-1], type = 'class')
+    classifier <- train(Survived ~ ., data = training_set,
+                 method = "rf",
+                 verbose = FALSE)
+    y_pred <- predict(classifier, newdata = test_set)
     y_pred <- as.numeric(as.character(y_pred))
     y_pred <- ifelse(y_pred > 0.5, 1, 0)
-    feature_importance <- varImpPlot(classifier)
+    feature_importance <- varImp(classifier)$importance
   }
     # Fitting XGBoost
   else if (model_type == "xgboost") {
@@ -342,16 +342,21 @@ classifier <- function(model_type) {
   test_set$Survived <- factor(test_set$Survived, levels = c(0, 1))
   y_pred <- factor(y_pred, levels = c(0, 1))
   cm_test <- table(data = y_pred, reference = test_set$Survived)
-  accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-  precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-  recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-  fscore <- (2 * (recall * precision)) / (recall + precision)
-  specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-  summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                        value = c(accuracy, precision, recall, fscore, specificity))
+  accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+  precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+  recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+  fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+  specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
+
+
+  summary <- data.frame(metric = c("accuracy_test", "precision_test",
+                                   "recall_test",
+                                   "fscore_test", "specificity_test"),
+                        value = c( accuracy_test, precision_test,
+                           recall_test,
+                           fscore_test, specificity_test))
   listOfDataframe <- list(summary, feature_importance)
-  return(listOfDataframe)
 }
 
 k_fold_cv <- function(model_type) {
@@ -370,41 +375,41 @@ k_fold_cv <- function(model_type) {
       test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
       y_pred <- factor(y_pred, levels = c(0, 1))
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                            validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
     })
     return((cv))
   }
-    # Fitting K-NN
-  else if (model_type == "knn") {
-    folds <- createFolds(training_set$Survived, 10)
-    cv <- lapply(folds, function(x) {
-      training_fold <- training_set[-x,]
-      test_fold <- training_set[x,]
-      y_pred <- knn(train = training_fold[, -1], test = test_fold[, -1],
-                    cl = training_fold[, 1], 5)
-      y_pred <- as.numeric(as.character(y_pred))
-      y_pred <- ifelse(y_pred > 0.5, 1, 0)
-      test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
-      y_pred <- factor(y_pred, levels = c(0, 1))
-      cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
+    #Fitting K-NN
+    else if (model_type == "knn") {
+      folds <- createFolds(training_set$Survived, 10)
+      cv <- lapply(folds, function(x) {
+        training_fold <- training_set[-x,]
+        test_fold <- training_set[x,]
+        y_pred <- knn(train = training_fold[, -1], test = test_fold[, -1],
+                      cl = training_fold[, 1], 5)
+        y_pred <- as.numeric(as.character(y_pred))
+        y_pred <- ifelse(y_pred > 0.5, 1, 0)
+        test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
+        y_pred <- factor(y_pred, levels = c(0, 1))
+        cm_test <- table(data = y_pred, reference = test_fold$Survived)
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
-    })
-    return((cv))
-  }
+        summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                              validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
+      })
+      return((cv))
+    }
     # Fitting SVM
   else if (model_type == "svm") {
     folds <- createFolds(training_set$Survived, 10)
@@ -421,14 +426,14 @@ k_fold_cv <- function(model_type) {
       test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
       y_pred <- factor(y_pred, levels = c(0, 1))
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                            validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
     })
     return((cv))
   }
@@ -441,21 +446,21 @@ k_fold_cv <- function(model_type) {
       classifier <- svm(formula = Survived ~ .,
                         data = training_fold,
                         type = 'C-classification',
-                        kernel = 'radial', sigma = 0.2656, C = 0.5)
+                        kernel = 'radial', sigma = 0.1589, C = 0.25)
       y_pred <- predict(classifier, newdata = test_fold[-1])
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
       test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
       y_pred <- factor(y_pred, levels = c(0, 1))
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                            validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
     })
     return((cv))
   }
@@ -473,14 +478,14 @@ k_fold_cv <- function(model_type) {
       test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
       y_pred <- factor(y_pred, levels = c(0, 1))
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                            validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
     })
     return((cv))
   }
@@ -490,50 +495,52 @@ k_fold_cv <- function(model_type) {
     cv <- lapply(folds, function(x) {
       training_fold <- training_set[-x,]
       test_fold <- training_set[x,]
-      classifier <- rpart(formula = Survived ~ .,
-                          data = training_fold)
-      y_pred <- predict(classifier, newdata = test_fold[-1], type = 'class')
+      classifier <- train(Survived ~ ., method = "rpart", data = training_fold,
+                             cp=0.0125)
+      y_pred <- predict(classifier, newdata = test_fold)
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
       test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
       y_pred <- factor(y_pred, levels = c(0, 1))
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                            validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
     })
     return((cv))
   }
     # Fitting Random Forest
   else if (model_type == "randomforest") {
-    folds <- createFolds(training_set$Survived, 10)
-    cv <- lapply(folds, function(x) {
-      training_fold <- training_set[-x,]
-      test_fold <- training_set[x,]
-      classifier <- randomForest(x = training_fold[-1],
-                                 y = training_fold$Survived,
-                                 ntree = 10)
-      y_pred <- predict(classifier, newdata = test_fold[-1], type = 'class')
+    fitControl <- trainControl(## 10-fold CV
+                           method = "repeatedcv",
+                           number = 10,
+                           ## repeated ten times
+                           repeats = 10)
+
+classifier <- train(Survived ~ ., data = training_set,
+                 method = "rf",
+                 trControl = fitControl,
+                 verbose = FALSE)
+      y_pred <- predict(classifier, newdata = test_set)
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
-      test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
+      test_set$Survived <- factor(test_set$Survived, levels = c(0, 1))
       y_pred <- factor(y_pred, levels = c(0, 1))
-      cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
-
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
-    })
-    return((cv))
+      cm_test <- table(data = y_pred, reference = test_set$Survived)
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
+      summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                            validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
+    list<-list(summary, classifier$results)
+    return(list)
   }
     # Fitting XGBoost
   else if (model_type == "xgboost") {
@@ -541,24 +548,24 @@ k_fold_cv <- function(model_type) {
     cv <- lapply(folds, function(x) {
       training_fold <- training_set[-x,]
       test_fold <- training_set[x,]
-      param <- list(lambda = 0.1, eta = 0.3, verbose = 0, alpha=0.1)
+      param <- list(lambda = 0.1, eta = 0.3, verbose = 0, alpha = 0.1)
       classifier <- xgboost(param, data = as.matrix(training_fold[-1]),
-                          label = training_fold$Survived,
-                          nrounds = 50, verbose = 0)
+                            label = training_fold$Survived,
+                            nrounds = 50, verbose = 0)
       y_pred <- predict(classifier, newdata = as.matrix(test_fold[-1]), type = 'class')
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
       test_fold$Survived <- factor(test_fold$Survived, levels = c(0, 1))
       y_pred <- factor(y_pred, levels = c(0, 1))
       cm_test <- table(data = y_pred, reference = test_fold$Survived)
-      accuracy <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
-      precision <- cm_test[4] / sum(cm_test[4], cm_test[2])
-      recall <- cm_test[4] / sum(cm_test[4], cm_test[3])
-      fscore <- (2 * (recall * precision)) / (recall + precision)
-      specificity <- cm_test[1] / sum(cm_test[1], cm_test[2])
+      accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+      precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+      recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+      fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+      specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
 
-      summary <- data.frame(metric = c("accuracy", "precision", "recall", "fscore", "specificity"),
-                            validation = c(accuracy, precision, recall, fscore, specificity))
+      summary <- data.frame(metric = c("accuracy_test", "precision_test", "recall_test", "fscore_test", "specificity_test"),
+                            validation = c(accuracy_test, precision_test, recall_test, fscore_test, specificity_test))
     })
     return((cv))
   }
@@ -569,7 +576,7 @@ logistic <- classifier("logistic")[1] %>%
   as.data.frame() %>%
   mutate(type = "logistic")
 knn <- classifier("knn")[1] %>%
-  as.data.frame() %>%
+  as.data.frame() %>% filter(str_detect(metric,"test")) %>%
   mutate(type = "knn")
 svm <- classifier("svm")[1] %>%
   as.data.frame() %>%
@@ -586,22 +593,13 @@ decisiontree <- classifier("decisiontree")[1] %>%
 randomforest <- classifier("randomforest")[1] %>%
   as.data.frame() %>%
   mutate(type = "randomforest")
-xgboost <- classifier("xgboost")[1] %>%
-  as.data.frame() %>%
-  mutate(type = "xgboost")
+# xgboost <- classifier("xgboost")[1] %>%
+#   as.data.frame() %>%
+#   mutate(type = "xgboost")
 
 
 summary <- logistic %>%
-  bind_rows(knn, svm, kernelsvm, naivebayes, decisiontree, randomforest, xgboost)
-
-# classifier("logistic")
-# classifier("knn")
-# classifier("svm")
-# classifier("kernelsvm")
-# classifier("naivebayes")
-# classifier("decisiontree")
-# classifier("randomforest")
-# classifier("xgboost")
+  bind_rows(knn, svm, kernelsvm, naivebayes, decisiontree, randomforest)
 
 logistic_cv <- k_fold_cv("logistic") %>%
   plyr::ldply(rbind) %>%
@@ -617,14 +615,14 @@ knn_cv <- k_fold_cv("knn") %>%
   dplyr::group_by(metric, type) %>%
   summarise(validation = mean(validation)) %>%
   as.data.frame()
-svm_cv <- k_fold_cv("svm") %>%
+svm_cv <- k_fold_cv("svm")[1] %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "svm") %>%
   dplyr::group_by(metric, type) %>%
   summarise(validation = mean(validation)) %>%
   as.data.frame()
-kernelsvm_cv <- k_fold_cv("kernelsvm") %>%
+kernelsvm_cv <- k_fold_cv("kernelsvm")[1] %>%
   plyr::ldply(rbind) %>%
   dplyr::select(-.id) %>%
   mutate(type = "kernelsvm") %>%
@@ -645,34 +643,50 @@ decisiontree_cv <- k_fold_cv("decisiontree") %>%
   dplyr::group_by(metric, type) %>%
   summarise(validation = mean(validation)) %>%
   as.data.frame()
-randomforest_cv <- k_fold_cv("randomforest") %>%
-  plyr::ldply(rbind) %>%
-  dplyr::select(-.id) %>%
+randomforest_cv <- k_fold_cv("randomforest")[[1]] %>%
   mutate(type = "randomforest") %>%
-  dplyr::group_by(metric, type) %>%
-  summarise(validation = mean(validation)) %>%
   as.data.frame()
-xgboost_cv <- k_fold_cv("xgboost") %>%
-  plyr::ldply(rbind) %>%
-  dplyr::select(-.id) %>%
-  mutate(type = "xgboost") %>%
-  dplyr::group_by(metric, type) %>%
-  summarise(validation = mean(validation)) %>%
-  as.data.frame()
+# xgboost_cv <- k_fold_cv("xgboost") %>%
+#   plyr::ldply(rbind) %>%
+#   dplyr::select(-.id) %>%
+#   mutate(type = "xgboost") %>%
+#   dplyr::group_by(metric, type) %>%
+#   summarise(validation = mean(validation)) %>%
+#   as.data.frame()
 
 
 summary_cv <- logistic_cv %>%
-  bind_rows(knn_cv, svm_cv, kernelsvm_cv, naivebayes_cv, decisiontree_cv, randomforest_cv, xgboost_cv) %>%
+  bind_rows(knn_cv, svm_cv, kernelsvm_cv, naivebayes_cv, decisiontree_cv, randomforest_cv) %>%
   as.data.frame()
 
 summary_all <- summary %>%
   full_join(summary_cv, by = c("metric", "type")) %>%
   dplyr::select(metric, type, value, validation)
 
+summary_train_test <- summary %>% filter(str_detect(metric, "fscore"))
+
+png("summary_train_test.png", width = plots$width, height = plots$height)
+ggplot(data = summary_train_test, aes(x = type, y = value, fill = metric)) +
+  geom_bar(stat = "identity", color = "black", position = position_dodge()) +
+  ylim(0, 1) +
+  labs(x = "Algorithm", y = "Score") +
+  theme(plot.tag.position = c(0.107, 0.95),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 20),
+        legend.position = "right",
+        plot.tag = element_text(size = 22, colour = "black"),
+        axis.text.x = element_text(color = "black", size = 15, angle = 45, hjust = .7, vjust = .9, face = "plain"),
+        axis.text.y = element_text(color = "black", size = 15, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 20, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 20, angle = 0, hjust = .5, vjust = .5, face = "plain"),
+        plot.title = element_blank(),
+        plot.subtitle = element_text(colour = 'black', size = 20))
+dev <- dev.off()
+
 png("algorithm_comparison_cv.png", width = plots$width, height = plots$height)
 ggplot(data = summary_all, aes(x = type, y = validation, fill = metric)) +
   geom_bar(stat = "identity", color = "black", position = position_dodge()) +
-    labs(x = "Algorithm", y = "Validation Value") +
+  labs(x = "Algorithm", y = "Validation Score") +
   theme(plot.tag.position = c(0.107, 0.95),
         legend.title = element_text(size = 24),
         legend.text = element_text(size = 20),
@@ -689,7 +703,7 @@ dev <- dev.off()
 png("algorithm_comparison.png", width = plots$width, height = plots$height)
 ggplot(data = summary_all, aes(x = type, y = value, fill = metric)) +
   geom_bar(stat = "identity", color = "black", position = position_dodge()) +
-    labs(x = "Algorithm", y = "Raw Value") +
+  labs(x = "Algorithm", y = "Score") +
   theme(plot.tag.position = c(0.107, 0.95),
         legend.title = element_text(size = 24),
         legend.text = element_text(size = 20),
@@ -704,12 +718,12 @@ ggplot(data = summary_all, aes(x = type, y = value, fill = metric)) +
 dev <- dev.off()
 
 feature_importance_tree <- classifier("decisiontree")[2] %>% as.data.frame()
-feature_importance_tree$imp<- as.integer(feature_importance_tree$imp)
+feature_importance_tree$imp <- as.integer(feature_importance_tree$imp)
 feature_plot_tree <- ggplot2::ggplot(feature_importance_tree, aes(x = variable, y = imp)) +
-  geom_col(color="black", fill="SeaGreen3", show.legend = F) +
+  geom_col(color = "black", fill = "SeaGreen3", show.legend = F) +
   coord_flip() +
-    labs(x = "", y = "Importance") +
-    scale_y_continuous(limits=c(0,150)) +
+  labs(x = "", y = "Importance") +
+  scale_y_continuous(limits = c(0, 150)) +
   geom_text(aes(label = imp), hjust = -0.5, color = "black", size = 7) +
   theme(plot.tag.position = c(0.107, 0.95),
         legend.title = element_text(size = 24),
@@ -726,13 +740,13 @@ feature_plot_tree <- ggplot2::ggplot(feature_importance_tree, aes(x = variable, 
 feature_importance_forest <- classifier("randomforest")[2] %>% as.data.frame()
 feature_importance_forest <- feature_importance_forest %>%
   rownames_to_column('variable')
-feature_importance_forest$MeanDecreaseGini<- as.integer(feature_importance_forest$MeanDecreaseGini)
-feature_plot_forest <- ggplot2::ggplot(feature_importance_forest, aes(x = reorder(variable, MeanDecreaseGini), y = MeanDecreaseGini)) +
-  geom_col(color="black", fill="SeaGreen3", show.legend = F) +
+feature_importance_forest$Overall <- as.integer(feature_importance_forest$Overall)
+feature_plot_forest <- ggplot2::ggplot(feature_importance_forest, aes(x = reorder(variable, Overall), y = Overall)) +
+  geom_col(color = "black", fill = "SeaGreen3", show.legend = F) +
   coord_flip() +
-  scale_y_continuous(limits=c(0,150)) +
-   labs(x = "", y = "Importance") +
-  geom_text(aes(label = MeanDecreaseGini), hjust = -0.5, color = "black", size = 7) +
+  scale_y_continuous(limits = c(0, 150)) +
+  labs(x = "", y = "Importance") +
+  geom_text(aes(label = Overall), hjust = -0.5, color = "black", size = 7) +
   theme(plot.tag.position = c(0.107, 0.95),
         legend.title = element_text(size = 24),
         legend.text = element_text(size = 20),
@@ -750,26 +764,61 @@ dev <- dev.off()
 
 #
 hyp_pam_classifier <- train(form = Survived ~ .,
-                            data = training_set, method = 'xgbLinear'
+                            data = training_set, method = 'rf'
   , na.action = na.omit)
 hyp_pam_classifier
 hyp_pam_classifier$bestTune
-#
-#
-# # xgbLinear
-# # svmRadial
-# # ada
-# # blackboost
-# # deepboost
-# # xgbTree
-# # fda
-#
-#
 
-summary_all<- summary_all %>% pivot_wider(names_from = metric, values_from = c(value, validation))
+fitControl <- trainControl(## 10-fold CV
+                           method = "repeatedcv",
+                           number = 10,
+                           ## repeated ten times
+                           repeats = 10)
 
-summary_all[2:11] <- sapply(summary_all[2:11], function(x) percent(x, accuracy=1))
+rfGrid <-  expand.grid(mtry=seq(2,10))
 
+rfFit2 <- train(Survived ~ ., data = training_set,
+                 method = "rf",
+                 trControl = fitControl,
+                 verbose = FALSE,
+                 tuneGrid = rfGrid)
+
+
+y_pred <- predict(rfFit2, newdata = test_set)
+    y_pred <- as.numeric(as.character(y_pred))
+    y_pred <- ifelse(y_pred > 0.5, 1, 0)
+    feature_importance <- varImp(rfFit2)$importance
+
+  test_set$Survived <- factor(test_set$Survived, levels = c(0, 1))
+  y_pred <- factor(y_pred, levels = c(0, 1))
+  cm_test <- table(data = y_pred, reference = test_set$Survived)
+
+  accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+  precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+  recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+  fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+  specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
+
+
+  random_forest_tuned <- data.frame(metric = c("accuracy_test", "precision_test",
+                                   "recall_test",
+                                   "fscore_test", "specificity_test"),
+                        value = c(accuracy_test,  precision_test,
+                                 recall_test,
+                                fscore_test, specificity_test))
+  listOfDataframe <- list(random_forest_tuned, feature_importance)
+
+random_forest_tuned<- random_forest_tuned %>% mutate(type = "randomforest_tuned") %>% rename(validation = value) %>%
+  full_join(randomforest_cv, by = c("metric", "validation", "type"))
+
+
+summary_all <- summary_all %>% pivot_wider(names_from = metric, values_from = c(value, validation))
+
+summary_all[2:11] <- sapply(summary_all[2:11], function(x) percent(x, accuracy = 1))
+
+random_forest_tuned <- random_forest_tuned %>% pivot_wider(names_from = metric, values_from = validation)
+
+random_forest_tuned[2:6] <- sapply(random_forest_tuned[2:6], function(x) percent(x, accuracy = 1))
 
 
 tryCatch(
@@ -791,6 +840,84 @@ tryCatch(
   }
 )
 
+tryCatch(
+  expr = {
+
+    test_data_file <- paste0("tuning_results", ".csv")
+    test_data_file_path <- paste0(data_out_dir, test_data_file)
+
+    write.csv(random_forest_tuned, test_data_file_path, row.names = TRUE)
+
+    msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
+    level(log) <- 'DEBUG'
+    debug(log, msg)
+  },
+  error = function(e) {
+    msg <- paste0("Failed to create tuning table", " with ", e)
+    level(log) <- 'ERROR'
+    error(log, msg)
+  }
+)
 
 
+## Hyperperameter tuning using caret
 
+#
+#
+# # xgbLinear
+# # svmRadial
+# # ada
+# # blackboost
+# # deepboost
+# # xgbTree
+# # fda
+#
+#
+
+# getModelInfo()$Rborist$perameters
+# modelLookup("rpart")
+#
+# y_pred <- train(Survived ~ ., method = "glm", data = training_set, tuneGrid = data.frame(k = seq(5, 21, 2)))
+# ggplot(y_pred, highlight = TRUE)
+# y_pred$bestTune
+#
+# # y_pred <- train(Survived ~ ., method = "knn", data = training_set, tuneGrid = data.frame(k = seq(5, 21, 2)))
+# # ggplot(y_pred, highlight = TRUE)
+# # y_pred$bestTune
+#
+# y_pred <- train(Survived ~ ., method = "rpart", data = training_set, tuneGrid = data.frame(cp = seq(0.0, 0.1, len= 25)))
+# ggplot(y_pred, highlight = TRUE)
+# y_pred$bestTune
+#
+y_pred <- train(Survived ~ ., method = "rf", data = training_set,
+                tuneGrid = data.frame(mtry = seq(2, 10, 1)))
+ggplot(y_pred, highlight = TRUE)
+y_pred$bestTune
+# classifier$finalModel$variable.importance
+#
+#  classifier <- train(Survived ~ ., method = "rpart", data = training_set,
+#                              cp=0.0125)
+#     y_pred <- predict(classifier, newdata = test_set)
+#     y_pred <- as.numeric(as.character(y_pred))
+#     y_pred <- ifelse(y_pred > 0.5, 1, 0)
+#     y_pred_train <- predict(classifier, newdata = training_set)
+#     y_pred_train <- as.numeric(as.character(y_pred_train))
+#     y_pred_train <- ifelse(y_pred_train > 0.5, 1, 0)
+#     df <- data.frame(imp = classifier$finalModel$variable.importance)
+#     feature_importance <- df %>%
+#       tibble::rownames_to_column() %>%
+#       dplyr::rename("variable" = rowname) %>%
+#       dplyr::arrange(imp) %>%
+#       dplyr::mutate(variable = forcats::fct_inorder(variable))
+#
+#  classifier <- rpart(formula = Survived ~ .,
+#                         data = training_set)
+#     y_pred <- predict(classifier, newdata = test_set[-1], type = 'class')
+#     y_pred <- as.numeric(as.character(y_pred))
+#     y_pred <- ifelse(y_pred > 0.5, 1, 0)
+#     df <- data.frame(imp = classifier$variable.importance)
+#     feature_importance <- df %>%
+#       tibble::rownames_to_column() %>%
+#       dplyr::rename("variable" = rowname) %>%
+#       dplyr::arrange(imp) %>%
+#       dplyr::mutate(variable = forcats::fct_inorder(variable))
