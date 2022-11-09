@@ -49,6 +49,10 @@ tryCatch(
 )
 
 titanic_raw <- read.csv("C:\\Users\\jastam\\Downloads\\titanic\\train.csv")
+test_set <- read.csv("C:\\git\\github_test\\titanic\\data_out\\test_cleaned.csv")
+titanic_raw <- read.csv("C:\\Users\\jastam\\Downloads\\titanic\\test.csv")
+
+
 titanic_raw[titanic_raw == ""] <- NA
 titanic_raw$Embarked <- as.numeric(as.factor(titanic_raw$Embarked))
 head(titanic_raw)
@@ -120,6 +124,17 @@ Embarked.row <- titanic_raw[
 Embarked.predictions <- predict(Embarked.model, newdata = Embarked.row)
 titanic_raw[is.na(titanic_raw$Embarked), "Embarked"] <- Embarked.predictions
 
+Fare.equation <- "Fare ~ Pclass + Sex + Fare + SibSp + Parch + Age"
+Fare.model <- lm(
+  formula = Fare.equation,
+  data = test_set[outlier.filter,]
+)
+Fare.row <- test_set[
+  is.na(test_set$Fare),
+  c("Pclass", "Sex", "Fare", "SibSp", "Parch", "Age")]
+Fare.predictions <- predict(Fare.model, newdata = Fare.row)
+test_set[is.na(test_set$Fare), "Fare"] <- Fare.predictions
+
 titanic_raw$Title <- gsub('(.*, )|(\\..*)', '', titanic_raw$Name)
 counts <- titanic_raw %>% count(Title)
 counts <- rename(counts, count = n)
@@ -175,8 +190,7 @@ grid.arrange(before, after, nrow = 2)
 dev <- dev.off()
 
 
-titanic_raw$Surname <- sapply(titanic_raw$Name,
-                              function(x) strsplit(x, split = '[,.]')[[1]])
+#titanic_raw$Surname <- sapply(titanic_raw$Name, function(x) strsplit(x, split = '[,.]')[[1]])
 
 
 titanic_raw$Fsize <- titanic_raw$SibSp + titanic_raw$Parch + 1
@@ -206,25 +220,22 @@ titanic_raw$Family_member[titanic_raw$Sex == 'female' &
                             titanic_raw$Title != 'Miss'] <- 'Mother'
 titanic_raw$Child <- as.factor(titanic_raw$Child)
 titanic_raw$Family_member <- as.factor(titanic_raw$Family_member)
-
+str(titanic_raw)
 # Encoding target feature as factor
 titanic_raw$Survived <- factor(titanic_raw$Survived, levels = c(0, 1))
 
 set.seed(123)
-split <- sample.split(titanic_raw$Survived, SplitRatio = 0.9)
-training_set <- subset(titanic_raw, split == TRUE)
-test_set <- subset(titanic_raw, split == FALSE)
+# split <- sample.split(titanic_raw$Survived, SplitRatio = 0.9)
+# training_set <- subset(titanic_raw, split == TRUE)
+# test_set <- subset(titanic_raw, split == FALSE)
 
-training_set <- training_set[, c(2, 3, 5:8, 10, 12, 13, 16, 18)]
-test_set <- test_set[, c(2, 3, 5:8, 10, 12, 13, 16, 18)]
-training_set_ml <- titanic_raw[, c(2, 3, 5:8, 10, 12, 13, 16, 18)]
+training_set <- titanic_raw[, c(2, 3, 5:8, 10, 12, 13, 15, 17)]
+test_set <- titanic_raw[, c(2, 4:7, 9, 11, 12, 14, 16)]
+str(titanic_raw)
 
-
-training_set[, c(2, 4:7)] <- scale(training_set[, c(2, 4:7)])
-training_set_ml[, c(2, 4:7)] <- scale(training_set_ml[, c(2, 4:7)])
-
-test_set[, c(2, 4:7)] <- scale(test_set[, c(2, 4:7)])
-
+#training_set[, c(2, 4:8)] <- scale(training_set[, c(2, 4:8)])
+test_set[, c(1, 3:6)] <- scale(test_set[, c(1, 3:6)])
+str(training_set)
 training_set$Sex <- as.numeric(as.factor(training_set$Sex))
 training_set$Embarked <- as.numeric(as.factor(training_set$Embarked))
 training_set$Title <- as.numeric(as.factor(training_set$Title))
@@ -419,7 +430,7 @@ k_fold_cv <- function(model_type) {
       classifier <- svm(formula = Survived ~ .,
                         data = training_fold,
                         type = 'C-classification',
-                        kernel = 'linear')
+                        kernel = 'linear', cost = 0.5)
       y_pred <- predict(classifier, newdata = test_fold[-1])
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
@@ -446,7 +457,7 @@ k_fold_cv <- function(model_type) {
       classifier <- svm(formula = Survived ~ .,
                         data = training_fold,
                         type = 'C-classification',
-                        kernel = 'radial', sigma = 0.1589, C = 0.25)
+                        kernel = 'radial', sigma = 0.5, C = 0.5)
       y_pred <- predict(classifier, newdata = test_fold[-1])
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
@@ -516,6 +527,9 @@ k_fold_cv <- function(model_type) {
   }
     # Fitting Random Forest
   else if (model_type == "randomforest") {
+
+    rfGrid <-  expand.grid(mtry=10)
+
     fitControl <- trainControl(## 10-fold CV
                            method = "repeatedcv",
                            number = 10,
@@ -525,7 +539,8 @@ k_fold_cv <- function(model_type) {
 classifier <- train(Survived ~ ., data = training_set,
                  method = "rf",
                  trControl = fitControl,
-                 verbose = FALSE)
+                 verbose = FALSE,
+tuneGrid = rfGrid)
       y_pred <- predict(classifier, newdata = test_set)
       y_pred <- as.numeric(as.character(y_pred))
       y_pred <- ifelse(y_pred > 0.5, 1, 0)
@@ -775,7 +790,7 @@ fitControl <- trainControl(## 10-fold CV
                            ## repeated ten times
                            repeats = 10)
 
-rfGrid <-  expand.grid(mtry=seq(2,10))
+rfGrid <-  expand.grid(mtry=seq(1,10))
 
 rfFit2 <- train(Survived ~ ., data = training_set,
                  method = "rf",
@@ -820,6 +835,88 @@ random_forest_tuned <- random_forest_tuned %>% pivot_wider(names_from = metric, 
 
 random_forest_tuned[2:6] <- sapply(random_forest_tuned[2:6], function(x) percent(x, accuracy = 1))
 
+rfFit3 <- train(Survived ~ ., data = training_set,
+                 method = "svmRadial",
+                 Control = fitControl,
+                 verbose = FALSE)
+nrow(test_set)
+nrow(training_set)
+length(y_pred)
+y_pred <- predict(rfFit3, newdata = test_set)
+test_set['preds'] <- y_pred
+
+    y_pred <- as.numeric(as.character(y_pred))
+    y_pred <- ifelse(y_pred > 0.5, 1, 0)
+    feature_importance <- varImp(rfFit2)$importance
+
+  test_set$Survived <- factor(test_set$Survived, levels = c(0, 1))
+  y_pred <- factor(y_pred, levels = c(0, 1))
+  cm_test <- table(data = y_pred, reference = test_set$Survived)
+
+  accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+  precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+  recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+  fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+  specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
+
+
+  kernel_svm_tuned <- data.frame(metric = c("accuracy_test", "precision_test",
+                                   "recall_test",
+                                   "fscore_test", "specificity_test"),
+                        value = c(accuracy_test,  precision_test,
+                                 recall_test,
+                                fscore_test, specificity_test))
+  listOfDataframe <- list(kernel_svm_tuned, feature_importance)
+
+kernel_svm_tuned<- kernel_svm_tuned %>% mutate(type = "kernelsvm_tuned") %>% rename(validation = value) %>%
+  full_join(kernelsvm_cv, by = c("metric", "validation", "type"))
+
+kernel_svm_tuned <- kernel_svm_tuned %>% pivot_wider(names_from = metric, values_from = validation)
+
+kernel_svm_tuned[2:6] <- sapply(kernel_svm_tuned[2:6], function(x) percent(x, accuracy = 1))
+
+params_tuned<- kernel_svm_tuned %>%
+  full_join(random_forest_tuned)
+
+rfFit4 <- train(Survived ~ ., data = training_set,
+                 method = "svmLinear3",
+                 trControl = fitControl,
+                 verbose = FALSE)
+
+
+y_pred <- predict(rfFit4, newdata = test_set)
+    y_pred <- as.numeric(as.character(y_pred))
+    y_pred <- ifelse(y_pred > 0.5, 1, 0)
+    feature_importance <- varImp(rfFit2)$importance
+
+  test_set$Survived <- factor(test_set$Survived, levels = c(0, 1))
+  y_pred <- factor(y_pred, levels = c(0, 1))
+  cm_test <- table(data = y_pred, reference = test_set$Survived)
+
+  accuracy_test <- sum(cm_test[1], cm_test[4]) / sum(cm_test[1:4])
+  precision_test <- cm_test[4] / sum(cm_test[4], cm_test[2])
+  recall_test <- cm_test[4] / sum(cm_test[4], cm_test[3])
+  fscore_test <- (2 * (recall_test * precision_test)) / (recall_test + precision_test)
+  specificity_test <- cm_test[1] / sum(cm_test[1], cm_test[2])
+
+
+  svm_tuned <- data.frame(metric = c("accuracy_test", "precision_test",
+                                   "recall_test",
+                                   "fscore_test", "specificity_test"),
+                        value = c(accuracy_test,  precision_test,
+                                 recall_test,
+                                fscore_test, specificity_test))
+  listOfDataframe <- list(kernel_svm_tuned, feature_importance)
+
+svm_tuned<- svm_tuned %>% mutate(type = "svm_tuned") %>% rename(validation = value) %>%
+  full_join(svm_cv, by = c("metric", "validation", "type"))
+
+svm_tuned <- svm_tuned %>% pivot_wider(names_from = metric, values_from = validation)
+
+svm_tuned[2:6] <- sapply(svm_tuned[2:6], function(x) percent(x, accuracy = 1))
+
+params_tuned<- params_tuned %>%
+  full_join(svm_tuned)
 
 tryCatch(
   expr = {
@@ -847,6 +944,64 @@ tryCatch(
     test_data_file_path <- paste0(data_out_dir, test_data_file)
 
     write.csv(random_forest_tuned, test_data_file_path, row.names = TRUE)
+
+    msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
+    level(log) <- 'DEBUG'
+    debug(log, msg)
+  },
+  error = function(e) {
+    msg <- paste0("Failed to create tuning table", " with ", e)
+    level(log) <- 'ERROR'
+    error(log, msg)
+  }
+)
+
+tryCatch(
+  expr = {
+
+    test_data_file <- paste0("tuning_results", ".csv")
+    test_data_file_path <- paste0(data_out_dir, test_data_file)
+
+    write.csv(params_tuned, test_data_file_path, row.names = TRUE)
+
+    msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
+    level(log) <- 'DEBUG'
+    debug(log, msg)
+  },
+  error = function(e) {
+    msg <- paste0("Failed to create tuning table", " with ", e)
+    level(log) <- 'ERROR'
+    error(log, msg)
+  }
+)
+length(test_set)
+tryCatch(
+  expr = {
+
+    test_data_file <- paste0("test_cleaned", ".csv")
+    test_data_file_path <- paste0(data_out_dir, test_data_file)
+
+    write.csv(test_set, test_data_file_path, row.names = TRUE)
+
+    msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
+    level(log) <- 'DEBUG'
+    debug(log, msg)
+  },
+  error = function(e) {
+    msg <- paste0("Failed to create tuning table", " with ", e)
+    level(log) <- 'ERROR'
+    error(log, msg)
+  }
+)
+
+
+tryCatch(
+  expr = {
+
+    test_data_file <- paste0("results", ".csv")
+    test_data_file_path <- paste0(data_out_dir, test_data_file)
+
+    write.csv(y_pred, test_data_file_path, row.names = TRUE)
 
     msg <- paste0("...Successfully saved test data table to ", test_data_file_path)
     level(log) <- 'DEBUG'
@@ -889,10 +1044,15 @@ tryCatch(
 # ggplot(y_pred, highlight = TRUE)
 # y_pred$bestTune
 #
-y_pred <- train(Survived ~ ., method = "rf", data = training_set,
-                tuneGrid = data.frame(mtry = seq(2, 10, 1)))
-ggplot(y_pred, highlight = TRUE)
-y_pred$bestTune
+# y_pred <- train(Survived ~ ., method = "rf", data = training_set,
+#                 tuneGrid = data.frame(mtry = seq(2, 10, 1)))
+# ggplot(y_pred, highlight = TRUE)
+# y_pred$bestTune
+#
+# y_pred <- train(Survived ~ ., method = "svmRadial", data = training_set,
+#                 tuneGrid = expand.grid(C = seq(0, 2, length = 20)))
+# ggplot(y_pred, highlight = TRUE)
+# y_pred$bestTune
 # classifier$finalModel$variable.importance
 #
 #  classifier <- train(Survived ~ ., method = "rpart", data = training_set,
